@@ -6,18 +6,15 @@ import {
   ServerCredentials,
   sendUnaryData,
 } from "@grpc/grpc-js";
-import * as net from "net";
+import { consumer } from "./config";
+import { BancadaInterface } from "./bancadaInterface";
+import { EachMessagePayload } from "kafkajs";
 
-// Carregar definição proto
 const protoDefs = loadSync("./bancada.proto");
 const bancadaProto = loadPackageDefinition(protoDefs) as any;
 
-// Listas para armazenar os dados
-let temperaturaBancadas: number[] = [];
-let umidadeBancadas: number[] = [];
-let condutividadeBancadas: number[] = [];
+const bancadaDataMap: { [key: number]: BancadaInterface[] } = {};
 
-// Funções auxiliares
 function somarLista(lista: number[]): number {
   return lista.reduce((acc, val) => acc + val, 0);
 }
@@ -32,20 +29,35 @@ function calcularMediana(lista: number[]): number {
 }
 
 function limparTudo() {
-  temperaturaBancadas = [];
-  umidadeBancadas = [];
-  condutividadeBancadas = [];
+  for (const key in bancadaDataMap) {
+    delete bancadaDataMap[key];
+  }
 }
 
-// Interface para tipar os dados da bancada recebidos via TCP
-interface BancadaData {
-  id: number;
-  temperatura: number;
-  umidade: number;
-  condutividade: number;
-}
+const runConsumer = (async (): Promise<void> => {
+  try {
+    await consumer.connect();
+    await consumer.subscribe({ topic: "bancada-data", fromBeginning: true });
 
-// Servidor gRPC
+    await consumer.run({
+      eachMessage: async ({ message }: EachMessagePayload): Promise<void> => {
+        try {
+          const data: BancadaInterface = JSON.parse(message.value!.toString());
+          if (!bancadaDataMap[data.id]) {
+            bancadaDataMap[data.id] = [];
+          }
+          bancadaDataMap[data.id].push(data);
+          console.log(`Received data for bancada ${data.id}:`, data);
+        } catch (error) {
+          console.error("Error processing message:", error);
+        }
+      },
+    });
+  } catch (error) {
+    console.error("Error in consumer:", error);
+  }
+})();
+
 const grpcServer = new Server();
 
 grpcServer.addService(bancadaProto.bancada.BancadaService.service, {
@@ -54,46 +66,35 @@ grpcServer.addService(bancadaProto.bancada.BancadaService.service, {
     callback: sendUnaryData<any>
   ) => {
     const { ip, porta } = call.request;
+    const bancadaId = parseInt(porta.toString()) - 2999;
 
-    // Conectar à bancada via TCP
-    const clienteBancada = net.createConnection({ host: ip, port: porta }, () => {
-      console.log(`Conectado à bancada ${ip}:${porta}`);
-    });
+    const bancadaData = bancadaDataMap[bancadaId] || [];
+    if (bancadaData.length === 0) {
+      callback(null, {
+        erro: `Nenhum dado encontrado para bancada ${bancadaId}`,
+      });
+      return;
+    }
 
-    clienteBancada.on("data", (bancadaData: Buffer) => {
-      try {
-        const bancada: BancadaData = JSON.parse(bancadaData.toString("utf-8"));
-        temperaturaBancadas.push(Number(bancada.temperatura));
-        umidadeBancadas.push(Number(bancada.umidade));
-        condutividadeBancadas.push(Number(bancada.condutividade));
+    const temperaturas = bancadaData.map((d) => d.temperatura);
+    const umidades = bancadaData.map((d) => d.umidade);
+    const condutividades = bancadaData.map((d) => d.condutividade);
 
-        const estatisticas = {
-          mediaTemperatura: somarLista(temperaturaBancadas) / temperaturaBancadas.length,
-          medianaTemperatura: calcularMediana(temperaturaBancadas),
-          mediaUmidade: somarLista(umidadeBancadas) / umidadeBancadas.length,
-          medianaUmidade: calcularMediana(umidadeBancadas),
-          mediaCondutividade: somarLista(condutividadeBancadas) / condutividadeBancadas.length,
-          medianaCondutividade: calcularMediana(condutividadeBancadas),
-          temperaturas: temperaturaBancadas,
-          umidades: umidadeBancadas,
-          condutividades: condutividadeBancadas,
-          bancadaId: bancada.id,
-          erro: "",
-        };
+    const estatisticas = {
+      mediaTemperatura: somarLista(temperaturas) / temperaturas.length,
+      medianaTemperatura: calcularMediana(temperaturas),
+      mediaUmidade: somarLista(umidades) / umidades.length,
+      medianaUmidade: calcularMediana(umidades),
+      mediaCondutividade: somarLista(condutividades) / condutividades.length,
+      medianaCondutividade: calcularMediana(condutividades),
+      temperaturas,
+      umidades,
+      condutividades,
+      bancadaId,
+      erro: "",
+    };
 
-        callback(null, estatisticas);
-      } catch (error) {
-        console.error("Erro ao processar dados da bancada:", error);
-        callback(null, { erro: "Erro ao processar dados" });
-      } finally {
-        clienteBancada.end();
-      }
-    });
-
-    clienteBancada.on("error", (err) => {
-      console.error("Erro na conexão com a bancada:", err);
-      callback(null, { erro: "Erro na conexão com a bancada" });
-    });
+    callback(null, estatisticas);
   },
 
   LimparTudo: (
@@ -105,11 +106,7 @@ grpcServer.addService(bancadaProto.bancada.BancadaService.service, {
   },
 });
 
-// Iniciar o servidor gRPC
-grpcServer.bindAsync(
-  "0.0.0.0:4000",
-  ServerCredentials.createInsecure(),
-  () => {
-    console.log("Servidor gRPC escutando na porta 4000");
-  }
-);
+grpcServer.bindAsync("0.0.0.0:4000", ServerCredentials.createInsecure(), () => {
+  console.log("Servidor gRPC escutando na porta 4000");
+  grpcServer.start();
+});
