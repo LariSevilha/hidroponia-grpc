@@ -1,14 +1,14 @@
 import { producer } from './config';
 import { BancadaInterface } from './bancadaInterface';
 
-class Bancada implements BancadaInterface {
+class Bancada3 implements BancadaInterface {
   id: number;
   temperatura: number;
   umidade: number;
   condutividade: number;
 
-  constructor(id: number) {
-    this.id = id;
+  constructor() {
+    this.id = 3;
     this.temperatura = parseFloat((Math.random() * (26 - 18) + 18).toFixed(2));
     this.umidade = parseFloat((Math.random() * (90 - 60) + 60).toFixed(2));
     this.condutividade = parseFloat((Math.random() * (2.5 - 1.2) + 1.2).toFixed(2));
@@ -19,36 +19,44 @@ class Bancada implements BancadaInterface {
     this.umidade = parseFloat((Math.random() * (90 - 60) + 60).toFixed(2));
     this.condutividade = parseFloat((Math.random() * (2.5 - 1.2) + 1.2).toFixed(2));
   }
+
+  async publicarDados(): Promise<void> {
+    const dados: BancadaInterface = {
+      id: this.id,
+      temperatura: this.temperatura,
+      umidade: this.umidade,
+      condutividade: this.condutividade,
+    };
+
+    await producer.send({
+      topic: 'bancada-data',
+      messages: [
+        {
+          key: `bancada-${this.id}`,
+          value: JSON.stringify(dados),
+        },
+      ],
+    });
+    
+    console.log(`BANCADA ${this.id} ENVIOU:`, dados);
+  }
 }
 
-const producerBancada = (async (): Promise<void> => {
+const executarBancada3 = async (): Promise<void> => {
   try {
     await producer.connect();
-    const bancada = new Bancada(3);  
+    console.log('PRODUCER BANCADA 3 CONECTADO');
+    
+    const bancada3 = new Bancada3();
     
     setInterval(async () => {
-      bancada.updateData();
-      const data: BancadaInterface = {
-        id: bancada.id,
-        temperatura: bancada.temperatura,
-        umidade: bancada.umidade,
-        condutividade: bancada.condutividade,
-      };
-
-      await producer.send({
-        topic: 'bancada-data',
-        messages: [
-          {
-            key: `bancada-${bancada.id}`,
-            value: JSON.stringify(data),
-          },
-        ],
-      });
-      console.log(`Bancada ${bancada.id} sent data:`, data);
-    }, 5000); 
+      bancada3.updateData();
+      await bancada3.publicarDados();
+    }, 3000);
+    
   } catch (error) {
-    console.error(`Error in bancada ${3}:`, error);
+    console.error('Erro na bancada 3:', error);
   }
-})();
+};
 
-export default producerBancada;
+executarBancada3();
