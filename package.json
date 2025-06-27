@@ -4,13 +4,15 @@
     "@grpc/proto-loader": "^0.7.15",
     "@types/node": "^22.15.17",
     "kafkajs": "^2.2.4",
-    "readline-sync": "^1.4.10",
-    "typescript": "^5.8.3"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "readline-sync": "^1.4.10"
   },
   "name": "picolo",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
+  "scripts": { 
+    "start": "ts-node index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,7 +20,10 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
     "@types/readline-sync": "^1.4.8",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }

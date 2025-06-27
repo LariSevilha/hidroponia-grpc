@@ -8,5 +8,5 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist"
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "producer/bancada1.ts", "producer/bancada2.ts", "producer/bancada3.ts", "consumers/clienteGrpc.ts", "index.ts"]
 }
