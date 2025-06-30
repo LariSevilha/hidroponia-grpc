@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+// Calculo service definition
+service CalculoService {
+  // Sends a message in response of data being added
+  rpc AdicionarDados(DadosBancada) returns (Resposta);
+  // Sends Statistics data from Bancada(s)
+  rpc CalcularEstatisticas(Empty) returns (Estatisticas);
+  // Sends a message in response of data being cleaned
+  rpc LimparDados(Empty) returns (Resposta);
+}
+
+// The Request message containing structured data for Bancada
+message DadosBancada {
+  int32 id = 1;
+  float temperatura = 2;
+  float umidade = 3;
+  float condutividade = 4;
+}
+
+// The response message containing all calculated statistics
+message Estatisticas {
+  double mediaTemperatura = 1;
+  double medianaTemperatura = 2;
+  double mediaUmidade = 3;
+  double medianaUmidade = 4;
+  double mediaCondutividade = 5;
+  double medianaCondutividade = 6;
+}
+
+// The response to some action done in the system
+message Resposta {
+  string mensagem = 1;
+}
+
+message Empty {}

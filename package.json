@@ -1,29 +1,26 @@
 {
+  "name": "hydroponics-system",
+  "version": "1.0.0",
+ "scripts": {
+  "build": "tsc",
+  "start:bancada1": "ts-node src/bancada1.ts",
+  "start:bancada2": "ts-node src/bancada2.ts",
+  "start:client": "ts-node src/client.ts",
+  "start:calculo": "ts-node src/calculo/calculo_server.ts",  
+  "start:web": "ts-node src/web.ts"
+},
   "dependencies": {
-    "@grpc/grpc-js": "^1.13.3",
-    "@grpc/proto-loader": "^0.7.15",
-    "@types/node": "^22.15.17",
-    "kafkajs": "^2.2.4",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "@grpc/grpc-js": "^1.8.0",
+    "@grpc/proto-loader": "^0.7.0",
+    "express": "^4.18.0",
+    "kafkajs": "^2.2.0",
     "readline-sync": "^1.4.10"
   },
-  "name": "picolo",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": { 
-    "start": "ts-node index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "devDependencies": {
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
     "@types/readline-sync": "^1.4.8",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "grpc-tools": "^1.12.0",
+    "ts-node": "^10.9.0",
+    "tslib": "^2.6.0",
+    "typescript": "^4.9.0"
   }
 }

@@ -1,35 +1,18 @@
 syntax = "proto3";
 
-package bancada;
-
-// Serviços
+// Bancada service definition
 service BancadaService {
-  rpc BuscarBancada(BancadaRequest) returns (BancadaResponse);
-  rpc LimparTudo(Empty) returns (LimparResponse);
+  // Sends the Bancada data
+  rpc GetDados(Empty) returns (DadosBancada);
 }
 
-// Mensagens
+// The Response message containing the Bancada structured data.
+message DadosBancada {
+  int32 id = 1;
+  float temperatura = 2;
+  float umidade = 3;
+  float condutividade = 4;
+}
+
+// The Request message containing "Empty"
 message Empty {}
-
-message BancadaRequest {
-  string ip = 1;
-  int32 porta = 2;
-}
-
-message BancadaResponse {
-  float mediaTemperatura = 1;
-  float medianaTemperatura = 2;
-  float mediaUmidade = 3;
-  float medianaUmidade = 4;
-  float mediaCondutividade = 5;
-  float medianaCondutividade = 6;
-  repeated float temperaturas = 7;
-  repeated float umidades = 8;
-  repeated float condutividades = 9;
-  int32 bancadaId = 10;
-  string erro = 11; // Para mensagens de erro, se houver
-}
-
-message LimparResponse {
-  string mensagem = 1;
-}
